@@ -1,0 +1,25 @@
+{
+    "name": "soroosh/ternobo-wire",
+    "description": "Use ServerSide Routing, And server-driven data sharing in VueJs",
+    "type": "library",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Soroosh Tanzadeh",
+            "email": "soroosh@ternobo.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Ternobo\\TernoboWire\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ternobo\\TernoboWire\\TernoboWireServiceProvider"
+            ]
+        }
+    }
+}
