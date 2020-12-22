@@ -34,6 +34,12 @@ class TernoboWire
             $data = array_merge($data, self::$sharedData);
         }
 
+        $data['user'] = null;
+
+        if (Auth::check()) {
+            $data['user'] = Auth::user();
+        }
+
         $response = [
             'data' => $data,
             'component' => $component,
@@ -53,8 +59,7 @@ class TernoboWire
             $v8 = new \V8Js();
             ob_start();
             $v8->executeString("var process = { env: { VUE_ENV: 'server', NODE_ENV: 'production' }};" .
-                "let data = " . json_encode($data) . ";" .
-                "let component = '$component'" .
+                "let ternoboApplicationData = " . json_encode($response) . ";" .
                 "this.global = { process: process };");
             $v8->executeString($renderer_source);
             $v8->executeString($app_source);
