@@ -4,6 +4,8 @@ namespace Ternobo\TernoboWire;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Route;
+use Ternobo\TernoboWire\Http\Controllers\WireController;
 
 class TernoboWire
 {
@@ -11,6 +13,14 @@ class TernoboWire
     private static $sharedData = [];
     private static $shareFunction;
     public static $ssr = true;
+
+    public static function routes()
+    {
+        Route::prefix("/ternobo-wire")->group(function () {
+            Route::post("/get-user", [WireController::class, 'getUser']);
+            Route::get("/get-token", [WireController::class, 'getToken']);
+        });
+    }
 
     public static function share(Closure $funtion)
     {
