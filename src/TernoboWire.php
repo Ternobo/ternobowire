@@ -12,8 +12,13 @@ class TernoboWire
 
     private static $sharedData = [];
     private static $shareFunction;
-    public static $ssr = true;
+    private static $ssr = true;
 
+    /**
+     * Ternobo Wire Routes
+     * 1 - /ternobo-wire/get-user - return active user
+     * 2 - /ternobo-wire/get-token - return current csrf token
+     */
     public static function routes()
     {
         Route::prefix("/ternobo-wire")->group(function () {
@@ -22,26 +27,37 @@ class TernoboWire
         });
     }
 
+    /**
+     * Set Shared Data Closure
+     *
+     * @param Closure $funtion this function should return Maped Array, which run before rendering.
+     */
     public static function share(Closure $funtion)
     {
         self::$shareFunction = $funtion;
     }
 
+    /**
+     * @param boolval $ssr if true, render function use ServerSide Render if available
+     */
     public static function setSSR($ssr)
     {
         self::$ssr = $ssr;
     }
 
+    /**
+     * Render Page
+     *
+     * @param String $component Page Component Name
+     * @param Array $data Data that will be passed to Page
+     */
     public static function render($component, $data = [])
     {
+        $tools = new WireTools();
         $isWireRequest = Request::header('X-TernoboWire');
         self::$sharedData = (self::$shareFunction)();
         if ($data instanceof Arrayable) {
             $data = $data->toArray();
-        }
-
-        if (is_array(self::$sharedData)) {
-            $data = array_merge($data, self::$sharedData);
         }
 
         $data['user'] = null;
@@ -57,7 +73,14 @@ class TernoboWire
         if (Auth::check()) {
             $response['user'] = Auth::user();
         }
-
+        if (is_array(self::$sharedData)) {
+            $response['shared'] = array_map(function ($value) {
+                if (is_callable($value)) {
+                    return ($value)();
+                }
+                return $value;
+            }, self::$sharedData);
+        }
         if ($isWireRequest != null && $isWireRequest) {
             return response()->json($response)->withHeaders(['X-TernoboWire' => true]);
         }
@@ -65,17 +88,10 @@ class TernoboWire
         if (class_exists("V8Js") && self::$ssr) {
             $renderer_source = file_get_contents(base_path('node_modules/vue-server-renderer/basic.js'));
             $app_source = file_get_contents(public_path('js/entry-server.js'));
-
-            $v8 = new \V8Js();
-            ob_start();
-            $v8->executeString("var process = { env: { VUE_ENV: 'server', NODE_ENV: 'production' }};" .
-                "let ternoboApplicationData = " . json_encode($response) . ";" .
-                "this.global = { process: process };");
-            $v8->executeString($renderer_source);
-            $v8->executeString($app_source);
+            $tools->serversideRender($renderer_source, $app_source, $response);
             $ssr = ob_get_clean();
         }
-        return view('app', ['ternoboApp' => $ssr, 'ternoboScripts' => "<script>window.ternoboApplicationData = " . json_encode($response) . ";</script>"]);
+        return view('app', ['ternoboApp' => $ssr, 'data' => json_encode($response)]);
     }
 
 }
