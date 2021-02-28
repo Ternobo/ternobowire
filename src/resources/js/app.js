@@ -3,11 +3,12 @@ require('./bootstrap');
 require('moment');
 
 import Vue from 'vue';
-import TernoboApp from "./Application.vue";
-import { store } from './TernoboWire/TernoboWire';
-import { plugin } from "./TernoboWire/TernoboWire";
+import {
+    plugin,
+} from 'wire-js';
 
-export default function (ssr = false, data = null, component = null) {
+
+export default function (ssr = false, dataToken = null, component = null) {
     let appInstance = null;
     Vue.use(plugin);
     let vuexStore = store();
@@ -18,23 +19,20 @@ export default function (ssr = false, data = null, component = null) {
             render: (h) =>
                 h(TernoboApp, {
                     props: {
-                        initialData: data,
-                        initialComponent: component,
+                        dataToken: dataToken,
                         resolveComponent: (component) => import(`./Pages/${component}`),
                     },
                 }),
         });
     } else {
-        let instanceData = window.ternoboApplicationData;
-        component = instanceData.component;
-
+        let dataToken = document.body.dataset.wire;
+        document.body.dataset.wire = "";
         appInstance = new Vue({
             store: vuexStore,
             render: (h) =>
                 h(TernoboApp, {
                     props: {
-                        initialData: instanceData.data,
-                        initialComponent: component,
+                        dataToken: dataToken,
                         resolveComponent: (component) => import(`./Pages/${component}`),
                     },
                 }),

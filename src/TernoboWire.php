@@ -3,6 +3,7 @@ namespace Ternobo\TernoboWire;
 
 use Closure;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Ternobo\TernoboWire\Http\Controllers\WireController;
@@ -24,6 +25,7 @@ class TernoboWire
         Route::prefix("/ternobo-wire")->group(function () {
             Route::post("/get-user", [WireController::class, 'getUser']);
             Route::get("/get-token", [WireController::class, 'getToken']);
+            Route::post("/get-data/{token}", [WireController::class, 'getData']);
         });
     }
 
@@ -43,6 +45,30 @@ class TernoboWire
     public static function setSSR($ssr)
     {
         self::$ssr = $ssr;
+    }
+
+    private static function uuidv4($prefix = '')
+    {
+        return sprintf($prefix . '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+
+            // 32 bits for "time_low"
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+
+            // 16 bits for "time_mid"
+            mt_rand(0, 0xffff),
+
+            // 16 bits for "time_hi_and_version",
+            // four most significant bits holds version number 4
+            mt_rand(0, 0x0fff) | 0x4000,
+
+            // 16 bits, 8 bits for "clk_seq_hi_res",
+            // 8 bits for "clk_seq_low",
+            // two most significant bits holds zero and one for variant DCE1.1
+            mt_rand(0, 0x3fff) | 0x8000,
+
+            // 48 bits for "node"
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
     }
 
     /**
@@ -88,10 +114,12 @@ class TernoboWire
         if (class_exists("V8Js") && self::$ssr) {
             $renderer_source = file_get_contents(base_path('node_modules/vue-server-renderer/basic.js'));
             $app_source = file_get_contents(public_path('js/entry-server.js'));
-            $tools->serversideRender($renderer_source, $app_source, $response);
-            $ssr = ob_get_clean();
+            $ssr = $tools->serversideRender($renderer_source, $app_source, $response);
         }
-        return view('app', ['ternoboApp' => $ssr, 'data' => json_encode($response)]);
+
+        $cacheId = session()->getId() . Request::path() . self::uuidv4("ternobo_wire_");
+        Cache::put("$cacheId", json_encode($response));
+        return view('app', ['ternoboApp' => $ssr, 'tuuid' => $cacheId]);
     }
 
 }
