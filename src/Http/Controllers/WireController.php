@@ -4,14 +4,19 @@ namespace Ternobo\TernoboWire\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Ternobo\TernoboWire\TernoboWire;
 
 class WireController extends Controller
 {
 
+    public function getShared(Request $request)
+    {
+        return TernoboWire::render(null, [], true);
+    }
+
     public function getData($token, Request $request)
     {
         $data = Cache::pull($token);
-        // dd($data);
         if ($data != null) {
             return response()->json(json_decode($data));
         }

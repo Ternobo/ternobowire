@@ -25,7 +25,8 @@ class TernoboWire
         Route::prefix("/ternobo-wire")->group(function () {
             Route::post("/get-user", [WireController::class, 'getUser']);
             Route::get("/get-token", [WireController::class, 'getToken']);
-            Route::post("/get-data/{token}", [WireController::class, 'getData']);
+            Route::post("/get-shared", [WireController::class, 'getShared']);
+            Route::post("/get-data/{token}", [WireController::class, 'getData'])->where('token', '.*');;
         });
     }
 
@@ -77,20 +78,16 @@ class TernoboWire
      * @param String $component Page Component Name
      * @param Array $data Data that will be passed to Page
      */
-    public static function render($component, $data = [])
+    public static function render($component, $data = [], $json = false)
     {
         $tools = new WireTools();
-        $isWireRequest = Request::header('X-TernoboWire');
+        $isWireRequest = $json ? '1' : Request::header('X-TernoboWire');
         self::$sharedData = (self::$shareFunction)();
         if ($data instanceof Arrayable) {
             $data = $data->toArray();
         }
 
         $data['user'] = null;
-
-        if (Auth::check()) {
-            $data['user'] = Auth::user();
-        }
 
         $response = [
             'data' => $data,
