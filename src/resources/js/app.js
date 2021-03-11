@@ -3,16 +3,15 @@ require('./bootstrap');
 require('moment');
 
 import Vue from 'vue';
+import TernoboApp from "wire-js";
 import {
     plugin,
 } from 'wire-js';
 
+Vue.use(plugin);
 
-export default function (ssr = false, dataToken = null, component = null) {
+export default function (ssr = false, dataToken = null, component = null, vuexStore = store()) {
     let appInstance = null;
-    Vue.use(plugin);
-    let vuexStore = store();
-
     if (ssr) {
         appInstance = new Vue({
             store: vuexStore,

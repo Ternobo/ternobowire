@@ -10,7 +10,7 @@ class TernoboWireServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__ . "resources" => resource_path(),
+            __DIR__ . "/resources" => resource_path(),
         ]);
 
         $kernel = $this->app->make(Kernel::class);
