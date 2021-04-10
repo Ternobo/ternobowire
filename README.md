@@ -2,6 +2,16 @@
 
 > Use ServerSide Routing, And server-driven data sharing in VueJs
 
+# Install
+
+## Laravel Package:
+
+`composer require soroosh/ternobo-wire`
+
+## Vuejs plugin :
+
+`npm i ternobowire-js`
+
 ## ServerSide Setup
 
 Create app.blade.php inside resources/view, then setup application root and token attribute:
@@ -29,6 +39,7 @@ Create app.blade.php inside resources/view, then setup application root and toke
 ```
 
 ### Routes
+
 Append TernoboWire::routes(); to top of routes/web.php file.
 
 ```php
@@ -53,10 +64,12 @@ Route::get('/', "IndexController@index");
 ```
 
 ### Shared data function
+
 The server-side adapters provide a way to preassign shared data for each request. This is typically done outside of your controllers. Shared data will be automatically loaded into shared state(Vuex).
- 
+
 Setup shared data function inside App/Providers/AppServiceProvider.php boot function.
-```php 
+
+```php
 <?php
 
 namespace App\Providers;
@@ -98,22 +111,21 @@ class AppServiceProvider extends ServiceProvider
     }
 }
 ```
-The function returns a mapped array that contains all shared Data. 
 
-
+The function returns a mapped array that contains all shared Data.
 
 ## Client-Side
 
 once you have the server-side application configured, you need to setup the client-side application.
 
 ### Initialize app
- 
+
 Setup your application entry point, then create a folder named Pages inside your front-end application root (default: resources/js).
 
 ```javascript
 import Vue from "vue";
-import WireApp from "wire-js"; 
-import { plugin, store } from "wire-js"; 
+import WireApp from "wire-js";
+import { plugin, store } from "wire-js";
 import Vuex from "vuex";
 Vue.use(plugin);
 Vue.use(Vuex);
@@ -121,16 +133,15 @@ Vue.use(Vuex);
 let dataToken = document.body.dataset.wire;
 document.body.dataset.wire = "";
 const vue_app = new Vue({
-    store: store(),
-    render: (h) =>
-        h(WireApp, {
-            props: {
-                dataToken: dataToken,
-                resolveComponent: (component) => import(`./Pages/${component}`),
-            },
-        }),
+	store: store(),
+	render: (h) =>
+		h(WireApp, {
+			props: {
+				dataToken: dataToken,
+				resolveComponent: (component) => import(`./Pages/${component}`),
+			},
+		}),
 }).$mount("#app");
 ```
 
 ** Now you can create any page and render it using TernoboWrie::render("pagename", $data) **
-
