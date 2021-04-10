@@ -102,11 +102,11 @@ The function returns a mapped array that contains all shared Data.
 
 
 
-##Client-Side
+## Client-Side
 
 once you have the server-side application configured, you need to setup the client-side application.
 
-###Initialize app
+### Initialize app
  
 Setup your application entry point, then create a folder named Pages inside your front-end application root (default: resources/js).
 
