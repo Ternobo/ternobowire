@@ -2,102 +2,135 @@
 
 > Use ServerSide Routing, And server-driven data sharing in VueJs
 
-## How To Use
+## ServerSide Setup
 
-Blade Template :
+Create app.blade.php inside resources/view, then setup application root and token attribute:
 
 ```php
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Wire Application') }}</title>
-
-    <!-- Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
-
-    <!-- Scripts -->
-    {!! $ternoboScripts !!}
+    <title>Ternobo App</title>
+  <link href="/css/app.css" rel="stylesheet" />
 </head>
 
-<body class="font-sans antialiased">
+<body class="font-sans antialiased" data-wire='{{ $tuuid }}'>
     {!! $ternoboApp !!}
-    <script src="{{ mix('js/entry-client.js') }}" defer></script>
-
+    <script src="/js/manifest.js" defer></script>
+    <script src="/js/vendor.js?" defer></script>
+    <script src="/js/app.js" defer></script>
 </body>
+
 </html>
 ```
 
-### server-side rendering
+### Routes
+Append TernoboWire::routes(); to top of routes/web.php file.
 
-#### entry-client.js
+```php
+<?php
+use Illuminate\Support\Facades\Route;
+use Ternobo\TernoboWire\TernoboWire;
 
-```javascript
-import app from "./app";
-app().$mount("#app");
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+ */
+
+TernoboWire::routes();
+Route::get('/', "IndexController@index");
+// ....
 ```
 
-#### entry-server.js :
+### Shared data function
+The server-side adapters provide a way to preassign shared data for each request. This is typically done outside of your controllers. Shared data will be automatically loaded into shared state(Vuex).
+ 
+Setup shared data function inside App/Providers/AppServiceProvider.php boot function.
+```php 
+<?php
 
-```javascript
-import app from "./app";
-let application = app(true, data, component).$mount();
-renderVueComponentToString(application, (err, res) => {
-	print(res);
-});
-```
+namespace App\Providers;
 
-#### app.js
+use Illuminate\Support\ServiceProvider;
+use Ternobo\TernoboWire\TernoboWire;
+use Illuminate\Support\Facades\Auth;
 
-```javascript
-require("./bootstrap");
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
 
-require("moment");
-
-import Vue from "vue";
-import TernoboApp from "./Application.vue";
-import { store } from "./TernoboWire/TernoboWire";
-import { plugin } from "./TernoboWire/TernoboWire";
-
-export default function (ssr = false, data = null, component = null) {
-	let appInstance = null;
-	Vue.use(plugin);
-	let vuexStore = store();
-
-	if (ssr) {
-		appInstance = new Vue({
-			store: vuexStore,
-			render: (h) =>
-				h(TernoboApp, {
-					props: {
-						initialData: data,
-						initialComponent: component,
-						resolveComponent: (component) => import(`./Pages/${component}`),
-					},
-				}),
-		});
-	} else {
-		let instanceData = window.ternoboApplicationData;
-		component = instanceData.component;
-
-		appInstance = new Vue({
-			store: vuexStore,
-			render: (h) =>
-				h(TernoboApp, {
-					props: {
-						initialData: instanceData.data,
-						initialComponent: component,
-						resolveComponent: (component) => import(`./Pages/${component}`),
-					},
-				}),
-		});
-	}
-	return appInstance;
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        TernoboWire::share(function () {
+            return [
+            	"appName" => config('app.name'),
+				"is_admin" => function (){
+					if(Auth::check()){
+						return Auth::user()->is_admin;
+					}
+					return false;
+				}
+            ];
+        });
+    }
 }
 ```
+The function returns a mapped array that contains all shared Data. 
+
+
+
+##Client-Side
+
+once you have the server-side application configured, you need to setup the client-side application.
+
+###Initialize app
+ 
+Setup your application entry point, then create a folder named Pages inside your front-end application root (default: resources/js).
+
+```javascript
+import Vue from "vue";
+import WireApp from "wire-js"; 
+import { plugin, store } from "wire-js"; 
+import Vuex from "vuex";
+Vue.use(plugin);
+Vue.use(Vuex);
+
+let dataToken = document.body.dataset.wire;
+document.body.dataset.wire = "";
+const vue_app = new Vue({
+    store: store(),
+    render: (h) =>
+        h(WireApp, {
+            props: {
+                dataToken: dataToken,
+                resolveComponent: (component) => import(`./Pages/${component}`),
+            },
+        }),
+}).$mount("#app");
+```
+
+** Now you can create any page and render it using TernoboWrie::render("pagename", $data) **
+
