@@ -5,6 +5,7 @@ use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Ternobo\TernoboWire\Http\Controllers\WireController;
 
@@ -78,7 +79,7 @@ class TernoboWire
      * @param String $component Page Component Name
      * @param Array $data Data that will be passed to Page
      */
-    public static function render($component, $data = [], $json = false)
+    public static function render($component, $data = [], $json = false, $status = 200, $headers = [])
     {
         $tools = new WireTools();
         $isWireRequest = $json ? '1' : Request::header('X-TernoboWire');
@@ -116,7 +117,7 @@ class TernoboWire
 
         $cacheId = session()->getId() . Request::path() . self::uuidv4("ternobo_wire_");
         Cache::put("$cacheId", json_encode($response));
-        return view('app', ['ternoboApp' => $ssr, 'tuuid' => $cacheId]);
+        return Response::view('app', ['ternoboApp' => $ssr, 'tuuid' => $cacheId]);
     }
 
 }
