@@ -117,7 +117,7 @@ class TernoboWire
 
         $cacheId = session()->getId() . Request::path() . self::uuidv4("ternobo_wire_");
         Cache::put("$cacheId", json_encode($response));
-        return Response::view('app', ['ternoboApp' => $ssr, 'tuuid' => $cacheId]);
+        return Response::view('app', ['ternoboApp' => $ssr, 'tuuid' => $cacheId], $status, $headers);
     }
 
 }
