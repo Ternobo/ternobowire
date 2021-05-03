@@ -88,8 +88,6 @@ class TernoboWire
             $data = $data->toArray();
         }
 
-        $data['user'] = null;
-
         $response = [
             'data' => $data,
             'component' => $component,
