@@ -104,7 +104,7 @@ class TernoboWire
             }, self::$sharedData);
         }
         if ($isWireRequest != null && $isWireRequest) {
-            return response()->json($response)->withHeaders(['X-TernoboWire' => true]);
+            return response()->json($response)->withHeaders(['X-TernoboWire' => true, "Pragma" => "no-cache", "Cache-Control" => "no-cache, no-store, must-revalidate"]);
         }
         $ssr = '<div id="app"></div>';
         if (class_exists("V8Js") && self::$ssr) {
